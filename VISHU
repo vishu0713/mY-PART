@@ -1,0 +1,273 @@
+##Calculating confidence intervals and population paraeters:
+
+calc_population_stats <- function(data, variable) {
+  mean_val <- mean(data[[variable]], na.rm = TRUE)
+  sd_val <- sd(data[[variable]], na.rm = TRUE)
+  var_val <- var(data[[variable]], na.rm = TRUE)
+  
+  # Number of non-NA observations
+  n <- sum(!is.na(data[[variable]]))  
+  # Standard error
+  stderr <- sd_val / sqrt(n)  
+  # 95% confidence interval
+  error_margin <- qt(0.975, df = n-1) * stderr
+  
+  lower_bound <- mean_val - error_margin
+  upper_bound <- mean_val + error_margin
+  
+  return(data.frame(
+    Mean = mean_val,
+    SD = sd_val,
+    Variance = var_val,
+    Lower_Bound = lower_bound,
+    Upper_Bound = upper_bound
+  ))
+}
+
+# Calculate stats for Face-Off Wins (FOW), Hits (HIT), and Power Play Goals (PPG)
+FOW_stats <- calc_population_stats(NHL_data, "FOW")
+HIT_stats <- calc_population_stats(NHL_data, "HIT")
+PPG_stats <- calc_population_stats(NHL_data, "PPG")
+
+# Results
+FOW_stats
+HIT_stats
+PPG_stats
+```
+## Key insights:
+
+
+### Face-off Wins(FOW)
+
+- **Mean:**
+  
+  86.39 — This shows the average number of face-off wins per player.
+
+- **Standard Deviation (SD)**
+  
+  51.12 — Relatively high SD shows a large spread in face-off wins.Like,some players are winning many face-offs, while others win few.
+
+- **Variance**
+  
+  2614.12 — Confirms that face-off wins vary widely among players.
+
+- **CI**
+  
+  We are 95% confident that the true population mean for face-off wins is between 61.91 and 110.87.
+
+- **Conclusions:**
+  
+  High variance and standard deviation show that face-off performance varies significantly across players, showcasing the importance of individual player analysis for strategy. Teams with higher FOW rates can dominate puck possession, specialy in critical situations like power plays or penalty kills.
+
+### HIT
+
+- **Mean**
+  
+  55.13 — Players delivered 55 hits in the season.
+
+- **Standard Deviation**
+  
+  25.79 — A lower SD than FOW, indicating a moderate spread. Most players have a HIT  count closer to the average, with fewer extreme outliers.
+
+- **Variance: 665.99**
+  
+  This relatively low variance indicates that the hit counts across players are more consistent.
+
+- **CI**
+  
+  We are 95% confident that the true population mean for hits lies between 47.71 and 62.56.
+
+
+- **Conclusion:** 
+  
+  Spread in HIT are on medicore level that it is  physicality is consistent among players, though some players are much more aggressive than others. Physical play, as measured by hits, can give a team a defensive advantage.
+
+### PowerPlay Goals
+
+- **Mean:**
+  
+  1.74 — The average number of power play goals scored per player is low.
+
+- **Standard Deviation**
+  
+  0.98 — The low SD indicates that most players score very few power play goals.
+
+-**Variance: 0.97**
+  
+  This very low variance supports the idea that only a handful of players score many power play goals, while most score 1 or fewer.
+
+- **CI**
+  
+  We are 95% confident that the true population mean for PPG is between 1.29 and 2.19.
+
+-**Conclusion:**
+  
+  The low mean, SD, and variance all show that power play goals are rare events, with a few key players contributing heavily. Data suggests that a team's power play success is rely on star players, making PPG a crucial statistic for analyzing the effectiveness of specific players.
+
+##Overall Conclusion
+
+- **FOW:** 
+
+A high SD and var shows that some players excel in face-offs and others don't , which can greatly affect team performance in critical moments, especially in games where possession is key.
+
+- **HIT:** 
+  
+  Moderate SD and variance, we can say that physical play is important but relatively consistent across players, though a few players specialize in it. HIT are a valuable metric for teams looking to disrupt opponents through aggressive play.
+
+- **PPG:**
+  
+  Low var and SD signifies that power play goals are rare, and teams need to rely on specialized players for success in power plays.
+
+
+## Total face off by teams
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Summarizing total faceoff wins by team
+fow_by_team <- NHL_data %>%
+  group_by(Team) %>%
+  summarize(Total_FOW = sum(FOW, na.rm = TRUE)) %>%
+  arrange(desc(Total_FOW))  # Sort by Total_FOW in descending order
+
+# Checking the data
+print(fow_by_team)
+
+ggplot(fow_by_team, aes(x = reorder(Team, Total_FOW, FUN = sum), y = Total_FOW)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.8) +
+  coord_flip() +
+  labs(title = "Total Faceoff Wins by Team", x = "Teams", y = "Total Faceoff Wins") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(b = 15))
+  )
+
+```
+
+###Insights:
+
+- **Top Teams in Faceoff Wins:**
+  
+  Seattle (SEA) is leading in total faceoff wins, showing their dominance in faceoff situations, a critical part of gaining possession in hockey.
+Boston (BOS) and Toronto (TOR) also have high numbers of faceoff wins, which suggests these teams are proficient in securing the puck after faceoffs.
+
+- **Middle performance:**
+  
+  Teams like Winnipeg (WPG), New York Islanders (NYI), and Detroit (DET) fall in the middle tier, with moderate success in faceoff wins.
+These teams still have solid numbers, indicating they are competitive in faceoff situations, but not at the level of the top teams.
+Teams with Fewer Faceoff Wins:
+  
+  At the bottom of the chart, teams like Montreal (MTL), St. Louis (STL), and Carolina (CAR) have the fewest faceoff wins. This could point to struggles in puck possession from faceoffs, which may affect their ability to control the pace of the game.
+Distribution of Faceoff Wins:
+  
+  The chart clearly shows a wide disparity between teams, with the top teams (SEA, BOS, TOR) significantly outpacing the lower-tier teams. The steep drop-off as you move down the chart highlights the variability in faceoff win success among NHL teams.
+
+- **Effectiveness:**
+  
+  This bar chart is highly effective in communicating the differences between teams and pinpoint the top performers like Seattle and Boston. It's easier for an audience to immediately grasp which teams are excelling.
+
+
+
+```{r}
+# Load necessary libraries
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+
+# Summarize total hits by team
+hits_by_team <- NHL_data %>%
+  group_by(Team) %>%
+  summarize(Total_Hits = sum(HIT, na.rm = TRUE)) %>%
+  arrange(Total_Hits)  # Sort by Total_Hits in ascending order for upside-down
+
+# Check the summarized data
+print(hits_by_team)
+
+# Melt the data for heatmap
+hits_melted <- melt(hits_by_team, id.vars = "Team")
+
+# Create the heatmap
+ggplot(hits_melted, aes(x = variable, y = reorder(Team, value), fill = value)) +  # Reorder for upside-down
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "white", high = "blue") +
+  labs(title = "Heatmap of Total Hits by Team", x = "Hits", y = "Team") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+        axis.text.y = element_text(size = 10), 
+        plot.title = element_text(hjust = 0.5, size = 16, face = "bold"))
+
+```
+## Insights
+- **Team Aggressiveness**
+
+Boston Bruins(BOS) stands out as the team with the highest number of hits, shown by the darkest blue shade at the top of the heatmap. This suggests that Boston plays a more physical and aggressive style, engaging in more body checks or challenges during games.
+
+Philadelphia Flyers(PHI) and New York Rangers(NYR) also have high hit counts, shown by darker blue shades, means they also engage heavily in physical play.
+
+- Low-Hit Teams:
+
+Colorado Avalanche(COL) and Columbus Blue Jackets(CBJ) are at the bottom of the heatmap, with lighter shades of purple, indicating fewer hits compared to other teams. This could suggest a less aggressive playing style or a focus on different strategies like finesse or puck control rather than physicality.
+Heatmap Gradient:
+
+The color gradient from dark blue to light purple helps quickly differentiate teams that rely more on physical play from those other.
+
+While BOS clearly dominates the chart with the darkest shade, many teams in the middle have very similar shades of purple, suggesting that they have roughly comparable hit totals.
+
+- **Key Takeaways:**
+
+This heatmap is effective in showing which teams are more physical (hits-wise) and could be used to highlight team strategies.
+
+Like Boston's high HIT count could be featured when discussing their defensive or physical dominance in the league.
+Teams with fewer hits, like Colorado, might be highlighted for their reliance on speed, skill, or other non-physical aspects of gameplay.
+
+```{r}
+library(plotly)
+
+# Summarize Total Powerplay Goals (PPG) by Team
+ppg_by_team <- NHL_data %>%
+  group_by(Team) %>%
+  summarize(Total_PPG = sum(PPG, na.rm = TRUE)) %>%
+  arrange(desc(Total_PPG))  # Sort by Total_PPG in descending order
+
+# Create the bar chart for PPG with ggplot
+p <- ggplot(ppg_by_team, aes(x = reorder(Team, Total_PPG), y = Total_PPG)) +  
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.8) +  # Solid color 'steelblue'
+  coord_flip() +  # Flips the axes for horizontal bars
+  labs(title = "Total Powerplay Goals by Team", x = "Team", y = "Total Powerplay Goals") +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 16, face = "bold", margin = margin(b = 15)),  # Space below the title
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20),  # Adds margin around the plot
+    panel.grid.minor = element_blank(),  # Removes minor grid lines for a cleaner look
+    panel.grid.major.y = element_blank()  # Removes horizontal grid lines to make the chart less busy
+  )
+
+# Convert ggplot to an interactive plotly object
+interactive_plot = ggplotly(p)
+
+# Print the interactive plot
+interactive_plot
+```
+
+### Insights:
+
+- **Dominant Teams:**
+  
+  The teams at the top of the chart, TOR, NSH, WSH, and SEB, have consistently demonstrated strong powerplay units.
+Struggling Teams: Teams at the bottom, like MTL and BUF, have faced challenges in their powerplay efficiency.
+Clustering: There seem to be two distinct clusters: a group of teams with 20-30 goals and another with fewer than 10. This might suggest different strategies or approaches to the powerplay.
+- **Outliers:**
+  
+  Teams like TOR and MTL are outliers, significantly deviating from the average.
+Benefits for Sports Writers:
+  
+  - **Story Ideas:**
+  
+  ~ **Success Stories:** Highlight the strategies and factors contributing to the success of teams like TOR.
+~ **Struggling Teams:** Analyze the reasons behind the underperformance of teams like MTL.
+~ **Coaching Impact:** Explore how coaching changes or adjustments have influenced powerplay success.
+~ **Player Impact:** Identify key players who have been instrumental in their team's powerplay performance.
+
+- **Conclusion**
+
+The analysis of the powerplay goals data reveals a wide range of performance among NHL teams. While some teams consistently excel on the powerplay, others struggle to capitalize on their opportunities. Factors such as player skill, coaching strategies, and team chemistry play significant roles in determining powerplay success.
